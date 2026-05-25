@@ -1,11 +1,27 @@
 # Claude Code — profile management
 # Source this file from ~/.zshrc:  source "$HOME/.config/claude/profile-manager.zsh"
 
-_CLAUDE_BIN="/opt/homebrew/bin/claude"
+_CLAUDE_BIN="${_CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo /opt/homebrew/bin/claude)}"
 _CLAUDE_STATUSLINE="$HOME/.config/claude/statusline.sh"
 
 # Generic arrow-key menu. Items prefixed with § are unselectable separators.
 # All display output goes to /dev/tty; selected item is printed to stdout.
+
+_claude_menu_draw() {
+  local -a items=("$@")
+  local n=${#items[@]} idx="${_CLAUDE_MENU_IDX:-0}" j item
+  for ((j=1; j<=n; j++)); do
+    item="${items[$j]}"
+    if [[ "$item" == §* ]]; then
+      printf "  \033[90m%s\033[0m\n" "${item#§}"
+    elif ((j-1 == idx)); then
+      printf "  \033[1;32m▶ %s\033[0m\n" "$item"
+    else
+      printf "    %s\n" "$item"
+    fi
+  done
+}
+
 _claude_menu() {
   emulate -L zsh
   local -a items=("$@")
@@ -13,23 +29,9 @@ _claude_menu() {
 
   while ((idx < n)) && [[ "${items[$((idx+1))]}" == §* ]]; do ((idx++)); done
 
-  _cm_draw() {
-    local j item
-    for ((j=1; j<=n; j++)); do
-      item="${items[$j]}"
-      if [[ "$item" == §* ]]; then
-        printf "  \033[90m%s\033[0m\n" "${item#§}"
-      elif ((j-1 == idx)); then
-        printf "  \033[1;32m▶ %s\033[0m\n" "$item"
-      else
-        printf "    %s\n" "$item"
-      fi
-    done
-  }
-
-  trap 'tput cnorm >/dev/tty' INT
+  trap 'tput cnorm >/dev/tty; trap - INT' INT
   tput civis >/dev/tty
-  _cm_draw >/dev/tty
+  _CLAUDE_MENU_IDX=$idx _claude_menu_draw "${items[@]}" >/dev/tty
 
   while true; do
     IFS= read -rsk1 k </dev/tty
@@ -59,10 +61,11 @@ _claude_menu() {
       break
     fi
     printf "\033[%dA" "$n" >/dev/tty
-    _cm_draw >/dev/tty
+    _CLAUDE_MENU_IDX=$idx _claude_menu_draw "${items[@]}" >/dev/tty
   done
 
   tput cnorm >/dev/tty
+  trap - INT
   printf "%s\n" "${items[$((idx+1))]}"
 }
 
@@ -118,8 +121,11 @@ _claude_remove() {
   local confirm
   IFS= read -r confirm </dev/tty
   if [[ "$confirm" == [yY] ]]; then
-    rm -rf "$HOME/.claude-$chosen"
-    printf "Profile '%s' removed.\n" "$chosen" >/dev/tty
+    local target="$HOME/.claude-$chosen"
+    if [[ "$target" == "$HOME/.claude-"* && -d "$target" ]]; then
+      rm -rf "$target"
+      printf "Profile '%s' removed.\n" "$chosen" >/dev/tty
+    fi
   fi
 }
 
