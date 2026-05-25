@@ -11,14 +11,18 @@ A zsh shell function for managing multiple Claude Code profiles (`~/.claude-*`),
 
 ## Installation
 
-1. Copy `profile-manager.zsh` to `~/.config/claude/profile-manager.zsh`
-2. Add to your `~/.zshrc`:
-
 ```zsh
-source "$HOME/.config/claude/profile-manager.zsh"
+curl -fsSL https://raw.githubusercontent.com/Grzesie2k/claude-profile-manager/main/install.sh | zsh
 ```
 
-3. Set `_CLAUDE_BIN` at the top of the file to your Claude Code binary path (default: `/opt/homebrew/bin/claude`).
+Then restart your shell or `source ~/.zshrc`.
+
+The installer:
+- Downloads `profile-manager.zsh` to `~/.config/claude/profile-manager.zsh`
+- Creates `~/.claude/skills/` and `~/.claude/CLAUDE.md` if they don't exist
+- Adds the `source` line to `~/.zshrc` (idempotent — safe to run again)
+
+**Note:** `_CLAUDE_BIN` auto-detects your Claude Code binary via `command -v claude`. Override by setting it before sourcing the file if needed.
 
 ## Usage
 
