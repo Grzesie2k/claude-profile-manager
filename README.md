@@ -18,7 +18,7 @@ curl -fsSL https://raw.githubusercontent.com/Grzesie2k/claude-profile-manager/ma
 Then restart your shell or `source ~/.zshrc`.
 
 The installer:
-- Downloads `profile-manager.zsh` to `~/.config/claude/profile-manager.zsh`
+- Downloads `profile-manager.zsh` and `statusline.sh` to `~/.config/claude/`
 - Creates `~/.claude/skills/` and `~/.claude/CLAUDE.md` if they don't exist
 - Adds the `source` line to `~/.zshrc` (idempotent — safe to run again)
 
@@ -34,6 +34,20 @@ claude [args]
 - **Enter** — launch Claude Code with selected profile
 - **+ Add account** — create a new profile and log in
 - **- Remove account** — permanently delete a profile
+
+## Status bar
+
+`statusline.sh` renders a prompt line shown in Claude Code's status bar. It displays:
+
+- Current working directory (with `~` shortening)
+- Git branch
+- Active profile name
+- Model name
+- Context window usage bar
+- Token counts (input/output)
+- Rate limit usage bars (5h and 7d)
+
+Each profile's `settings.json` points to `statusline.sh <profile-name>` so the profile name is always visible in the bar.
 
 ## Global config (shared across all profiles)
 

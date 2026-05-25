@@ -2,8 +2,9 @@
 set -euo pipefail
 
 REPO="Grzesie2k/claude-profile-manager"
-RAW="https://raw.githubusercontent.com/$REPO/main/profile-manager.zsh"
+RAW="https://raw.githubusercontent.com/$REPO/main"
 DEST="$HOME/.config/claude/profile-manager.zsh"
+STATUSLINE_DEST="$HOME/.config/claude/statusline.sh"
 ZSHRC="$HOME/.zshrc"
 SOURCE_LINE='source "$HOME/.config/claude/profile-manager.zsh"'
 
@@ -19,11 +20,13 @@ for cmd in curl zsh; do
   fi
 done
 
-# Download profile-manager.zsh
-print_step "Downloading profile-manager.zsh..."
+# Download scripts
+print_step "Downloading profile-manager.zsh and statusline.sh..."
 mkdir -p "${DEST:h}"
-curl -fsSL "$RAW" -o "$DEST"
-print_ok "Saved to $DEST"
+curl -fsSL "$RAW/profile-manager.zsh" -o "$DEST"
+curl -fsSL "$RAW/statusline.sh" -o "$STATUSLINE_DEST"
+chmod +x "$STATUSLINE_DEST"
+print_ok "Saved to ${DEST:h}/"
 
 # Create shared global config structure
 print_step "Setting up shared config..."
