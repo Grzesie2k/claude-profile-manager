@@ -132,7 +132,9 @@ _claude_remove() {
 claude() {
   local -a profiles=()
   for dir in "$HOME"/.claude-*/; do
-    [[ -d "$dir" ]] && profiles+=("${${dir#$HOME/.claude-}%/}")
+    # Only real profiles (created by _claude_add) have a settings.json;
+    # this skips unrelated dirs like ~/.claude-squad.
+    [[ -d "$dir" && -f "$dir/settings.json" ]] && profiles+=("${${dir#$HOME/.claude-}%/}")
   done
 
   if [[ ${#profiles[@]} -eq 0 ]]; then
