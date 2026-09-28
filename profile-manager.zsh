@@ -129,13 +129,55 @@ _claude_remove() {
   fi
 }
 
-claude() {
-  local -a profiles=()
+# Lists profile names (dirs ~/.claude-<name> containing settings.json).
+_claude_profiles() {
+  local dir
   for dir in "$HOME"/.claude-*/; do
     # Only real profiles (created by _claude_add) have a settings.json;
     # this skips unrelated dirs like ~/.claude-squad.
-    [[ -d "$dir" && -f "$dir/settings.json" ]] && profiles+=("${${dir#$HOME/.claude-}%/}")
+    [[ -d "$dir" && -f "$dir/settings.json" ]] && printf "%s\n" "${${dir#$HOME/.claude-}%/}"
   done
+}
+
+_claude_run() {
+  local name="$1"; shift
+  local dir="$HOME/.claude-$name"
+  if [[ ! -f "$dir/settings.json" ]]; then
+    printf "Unknown profile '%s'. Available: %s\n" "$name" "${(j:, :)${(f)"$(_claude_profiles)"}}" >&2
+    return 1
+  fi
+  CLAUDE_CONFIG_DIR="$dir" "$_CLAUDE_BIN" "$@"
+}
+
+claude() {
+  emulate -L zsh
+  local profile="" arg
+  local -a args=()
+
+  # --profile is consumed here (claude has no such flag of its own);
+  # everything else is forwarded untouched.
+  while (( $# )); do
+    arg="$1"
+    case "$arg" in
+      --profile)
+        [[ -z "$2" ]] && { printf "--profile requires a name\n" >&2; return 1; }
+        profile="$2"; shift 2 ;;
+      --profile=*)
+        profile="${arg#--profile=}"; shift ;;
+      --)
+        args+=("$@"); shift $#; break ;;
+      *)
+        args+=("$arg"); shift ;;
+    esac
+  done
+
+  if [[ -n "$profile" ]]; then
+    _claude_run "$profile" "${args[@]}"
+    return
+  fi
+
+  local -a profiles=("${(@f)$(_claude_profiles)}")
+  profiles=("${(@)profiles:#}")
 
   if [[ ${#profiles[@]} -eq 0 ]]; then
     printf "No profiles found.\n" >/dev/tty
@@ -151,6 +193,18 @@ claude() {
     "+ Add account")    _claude_add ;;
     "- Remove account") _claude_remove "${profiles[@]}" ;;
     "") return 1 ;;
-    *) CLAUDE_CONFIG_DIR="$HOME/.claude-$chosen" "$_CLAUDE_BIN" "$@" ;;
+    *) _claude_run "$chosen" "${args[@]}" ;;
   esac
 }
+
+# Completion for --profile values; other args fall through to claude's own
+# completion if one is installed.
+_claude_complete() {
+  if [[ "${words[CURRENT-1]}" == --profile ]]; then
+    compadd -- ${(f)"$(_claude_profiles)"}
+    return
+  fi
+  compadd -- --profile
+  _default
+}
+compdef _claude_complete claude 2>/dev/null
