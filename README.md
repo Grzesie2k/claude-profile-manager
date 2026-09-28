@@ -5,6 +5,7 @@ A zsh shell function for managing multiple Claude Code profiles (`~/.claude-*`),
 ## Features
 
 - Interactive arrow-key menu to select a profile at startup
+- `--profile <name>` to skip the menu, with tab completion
 - Add / remove profiles
 - Each new profile gets a `settings.json` with sane defaults
 - Shared `~/.claude/CLAUDE.md` and `~/.claude/skills/` are symlinked into every new profile automatically
@@ -35,6 +36,19 @@ claude [args]
 - **+ Add account** — create a new profile and log in
 - **- Remove account** — permanently delete a profile
 
+### Skipping the menu
+
+Pass `--profile` to launch a profile directly, without the picker:
+
+```zsh
+claude --profile private
+claude --profile=work --resume
+```
+
+`--profile` is consumed by the wrapper (Claude Code has no flag of that name);
+every other argument is forwarded untouched. Tab completion for profile names
+is installed alongside the function.
+
 ## Status bar
 
 `statusline.sh` renders a prompt line shown in Claude Code's status bar. It displays:
@@ -48,6 +62,21 @@ claude [args]
 - Rate limit usage bars (5h and 7d)
 
 Each profile's `settings.json` points to `statusline.sh <profile-name>` so the profile name is always visible in the bar.
+
+## Caveat: settings.json can be shadowed
+
+Each profile stores its options in `~/.claude-<name>/settings.json`, which Claude
+Code reads as *user* settings. A `settings.json` living in the project directory
+takes precedence over that file, and so can override any key a profile sets —
+`statusLine`, `hooks`, `permissions`, `env`, `effortLevel`.
+
+The case that bites in practice is a `~/.claude/settings.json` left over from a
+single-account setup: launch Claude Code from your home directory and the home
+directory *is* the project directory, so the leftover file wins and the profile's
+own settings are silently ignored.
+
+Keep `~/.claude/` limited to what this tool actually shares — `CLAUDE.md` and
+`skills/` — and move anything per-account into the profile's own `settings.json`.
 
 ## Global config (shared across all profiles)
 
